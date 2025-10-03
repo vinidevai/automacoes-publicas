@@ -1,0 +1,764 @@
+{
+  "name": "Backup Workflows",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        656,
+        -16
+      ],
+      "id": "4fdeaac9-cab6-4f13-838d-01a3b14b7890",
+      "name": "loop_workflows"
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "fileName": "={{ $('loop_workflows').item.json.name.replaceAll(' ', '') }}"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        0
+      ],
+      "id": "c03b43e3-007f-479d-8386-e7f9d12c10a1",
+      "name": "toJson"
+    },
+    {
+      "parameters": {
+        "name": "={{ $('setInfo').item.json.data.name.toLowerCase().replaceAll(' ', '-') }}",
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "={{ $('setInfo').item.json.pasta }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2160,
+        -96
+      ],
+      "id": "39dd89b3-ca19-4ac8-abb7-f1152b61aa89",
+      "name": "uploadFile",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "dnPwnCRo5M8HREuo",
+          "name": "Drive Vini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('setInfo').item.json.file_id }}",
+          "mode": "id"
+        },
+        "changeFileContent": true,
+        "newUpdatedFileName": "={{ $('setInfo').item.json.data.name.toLowerCase().replaceAll(' ', '-') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        2160,
+        96
+      ],
+      "id": "9bae21a3-e3f9-4e50-b899-162e02309805",
+      "name": "updateFile",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "dnPwnCRo5M8HREuo",
+          "name": "Drive Vini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 18
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        256,
+        -16
+      ],
+      "id": "69a54bbc-71d7-40ec-b544-b2b49606e0bd",
+      "name": "start"
+    },
+    {
+      "parameters": {
+        "amount": 1
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2432,
+        96
+      ],
+      "id": "ecca9efd-0244-4c70-a939-4063767a4e47",
+      "name": "Wait",
+      "webhookId": "9fd63e1b-57d5-46eb-bee4-88bc6e0b208e"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $('loop_workflows').item.json.name.toLowerCase().replaceAll(' ', '-') }}",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "={{ $('getFolder').item.json.id }}",
+            "mode": "id"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1216,
+        -96
+      ],
+      "id": "c7dc4c29-0023-423b-afb9-53ed6f39e471",
+      "name": "getFile",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "dnPwnCRo5M8HREuo",
+          "name": "Drive Vini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ba2febc3-d84f-4f8f-9e3b-26e1a7d390ed",
+              "leftValue": "={{ $('getFolder').item.json }}",
+              "rightValue": "",
+              "operator": {
+                "type": "object",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1024,
+        0
+      ],
+      "id": "b488485b-f9fb-4605-b264-66660101d422",
+      "name": "folder_exists"
+    },
+    {
+      "parameters": {
+        "resource": "folder",
+        "name": "={{ $now.format('dd-MM-yyyy') }}",
+        "driveId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "My Drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "=id-da-sua-pasta-de-backups",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1216,
+        96
+      ],
+      "id": "3a0772ec-be25-426f-8e66-f6f2f0d5fe33",
+      "name": "createFolder",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "dnPwnCRo5M8HREuo",
+          "name": "Drive Vini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2dc54f48-6159-4230-adf3-43c34e37ab65",
+              "name": "data",
+              "value": "={{ $('loop_workflows').item.json }}",
+              "type": "object"
+            },
+            {
+              "id": "5fdef58a-4283-4322-a03c-f642555a4968",
+              "name": "pasta",
+              "value": "={{ $json.kind ? $json.id : $('getFolder').item.json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "09e26bef-b5aa-4acf-a153-b3c77f06c375",
+              "name": "file_exists",
+              "value": "={{ $json.kind ? false : $json.id ? true : false }}",
+              "type": "string"
+            },
+            {
+              "id": "758b9e95-427c-4f89-b85a-18586f26362c",
+              "name": "file_id",
+              "value": "={{ $json.kind ? '' : $json.id ? $json.id : '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "05bc8c3e-0f04-48f7-a925-bf392dae2c8f",
+      "name": "setInfo"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('setInfo').item.json.file_exists }}",
+                    "rightValue": "false",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "61fad2e1-44cc-4d2e-be8f-b8a1c189c54e"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "create"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5103dd05-d344-459c-8e78-49d2fc2ae315",
+                    "leftValue": "={{ $('setInfo').item.json.file_exists }}",
+                    "rightValue": "true",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "update"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        1952,
+        0
+      ],
+      "id": "80fd2d48-6462-412c-aca4-c223efddeb19",
+      "name": "create-update"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {
+          "includeUnpaired": true
+        }
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        1424,
+        0
+      ],
+      "id": "f603ccc9-d982-4093-a93d-c3ebd0386e78",
+      "name": "merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "id-do-seu-workflow",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/id-do-seu-workflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        448,
+        784
+      ],
+      "id": "19a0e090-9033-4ff9-9d21-56bd8fafd2ec",
+      "name": "chama_backup"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $now.format('dd-MM-yyyy') }}",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "=id-da-sua-pasta-de-backups",
+            "mode": "id"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        848,
+        0
+      ],
+      "id": "f7836028-6c32-4f71-b21a-8dd64b12655e",
+      "name": "getFolder",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "dnPwnCRo5M8HREuo",
+          "name": "Drive Vini"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "filters": {
+          "activeWorkflows": true
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        464,
+        -16
+      ],
+      "id": "94b5a0dc-a5ce-4048-b41f-606ebce205b9",
+      "name": "pega_filtra_workflows",
+      "credentials": {
+        "n8nApi": {
+          "id": "QJVdKjLNPlJnHPGa",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "workflowId": {
+          "__rl": true,
+          "value": "={{ $json.workflow_id }}",
+          "mode": "id"
+        },
+        "requestOptions": {}
+      },
+      "type": "n8n-nodes-base.n8n",
+      "typeVersion": 1,
+      "position": [
+        464,
+        192
+      ],
+      "id": "83ca465b-28dc-4cb7-b959-a4f14328c518",
+      "name": "pega_workflow",
+      "credentials": {
+        "n8nApi": {
+          "id": "QJVdKjLNPlJnHPGa",
+          "name": "n8n account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        256,
+        192
+      ],
+      "id": "105a1c4c-382a-4a81-9d9a-5bfb17cc6c6a",
+      "name": "recebe_chamada"
+    },
+    {
+      "parameters": {
+        "events": [
+          "update"
+        ]
+      },
+      "type": "n8n-nodes-base.n8nTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        784
+      ],
+      "id": "7424a097-2575-4042-845a-79cf736fa963",
+      "name": "escuta_atualizacao"
+    },
+    {
+      "parameters": {
+        "content": "# 💡 O que é o Operador Ternário em JavaScript?\n\nO **Operador Ternário** é o único operador em JavaScript que utiliza **três operandos**. Ele é o atalho mais compacto e legível para a estrutura `if...else` simples, ideal para quando você precisa de uma decisão rápida de \"se isso for verdade, use A; senão, use B\".\n\n## Sintaxe Básica\n\nA estrutura padrão é:\n\n```\ncondição ? valor_se_verdadeiro : valor_se_falso\n```\n\n1.  **`condição`**: A expressão que será avaliada (deve ser **verdadeira** ou **falsa**).\n2.  **`?` (Ponto de Interrogação)**: Marca o início do que acontece se a condição for **verdadeira**.\n3.  **`valor_se_verdadeiro`**: O valor ou a expressão retornada se a **condição** for **verdadeira**.\n4.  **`:` (Dois Pontos)**: Funciona como o `else` (senão).\n5.  **`valor_se_falso`**: O valor ou a expressão retornada se a **condição** for **falsa**.\n\n## Variaveis do node `setInfo`\n\n\n### 1. Variável `pasta`\n\n```\npasta = {{ $json.kind ? $json.id : $('getFolder').item.json.id }}\n```\n\n* **Lógica**: Se o dado de entrada **tiver o campo `kind`** (vindo do nó **`createFolder`** que foi executado), use o **ID de pasta recém-criada** (`$json.id`). **SENÃO** (se o `createFolder` não foi executado), use o **ID de pasta que já existia** (vindo do nó **`getFolder`**).\n\n### 2. Variável `file_exists` (Encadeamento)\n\n```\nfile_exists = {{ $json.kind ? false : $json.id ? true : false }}\n```\n\n1.  **Primeiro Ternário**: **`$json.kind ? false`**\n    * **Se `createFolder` executou**: O arquivo **não existe** na pasta (porque a pasta é nova). Retorna **`false`**.\n2.  **Segundo Ternário (parte do `valor_se_falso`):** **`$json.id ? true : false`**\n    * **Se `createFolder` NÃO executou**: Verifique se o nó **`getFile`** encontrou um arquivo (se `$json.id` existe/tem valor).\n    * **Se SIM**: O arquivo **existe**. Retorna **`true`**.\n    * **Se NÃO**: O arquivo **não existe**. Retorna **`false`**.\n\n### 3. Variável `file_id` (Encadeamento)\n\n```\nfile_id = {{ $json.kind ? '' : $json.id ? $json.id : '' }}\n```\n\n1.  **Primeiro Ternário**: **`$json.kind ? ''`**\n    * **Se `createFolder` executou**: O arquivo não existe. Retorna **`''`** (string vazia).\n2.  **Segundo Ternário (parte do `valor_se_falso`):** **`$json.id ? $json.id : ''`**\n    * **Se `createFolder` NÃO executou**: Verifique se o nó **`getFile`** encontrou um arquivo.\n    * **Se SIM**: Retorna o **ID do arquivo encontrado** (`$json.id`).\n    * **Se NÃO**: O arquivo não existe. Retorna **`''`** (string vazia).",
+        "height": 1520,
+        "width": 992,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2672,
+        -1216
+      ],
+      "typeVersion": 1,
+      "id": "7a5f3f08-233b-4f06-89ae-451e9e302d11",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## chama_backup\nTroque o **`id-do-workflow`** no node **`chama_backup`** pelo id deste workflow de backup\n\n![Image](https://i.imgur.com/xXhNNC7.png)\n\n```\nworkflow/id-do-seu-workflow\n```\n\nAssim que fizer isso, você pode copiar estes dois nodes e colar em qualquer workflow seu para ter a funcionalidade de realizar o backup ao salvar\n\nObs.: O node **`escuta_atualizacao`** só funciona quando o workflow esta ativo. Então ao colar estes nodes em qualquer workflow, ative ele. Assim será efetuado um backup do workflow sempre que você o salvar.\n",
+        "height": 608,
+        "width": 608,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        352
+      ],
+      "typeVersion": 1,
+      "id": "5cf10095-6957-480f-bb34-d0f532191454",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "## Configurando o ID da sua pasta de backups nos nodes do Google Drive\n\nVa ate sua pasta de backups no Drive e copie o **`id da pasta`** \n\n![Image](https://i.imgur.com/PXtVwYl.png)\n\nO id vai estar logo após a palavra **`folders`**\n\n```\nfolders/id-da-sua-pasta\n```\n\nCopie esse id e cole no campo '**`Filter`**' do node **getFolder**\n![Image](https://i.imgur.com/Jz1K2iG.png)\n\nCole o id tambem no campo '**`Parent Folder`**' do node **createFolder**\n![Image](https://i.imgur.com/70QqRbV.png)\n",
+        "height": 800,
+        "width": 544,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        800,
+        320
+      ],
+      "typeVersion": 1,
+      "id": "dcfca042-35dd-4503-9a15-2648787f0d01",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "# Configurando credenciais nos nodes do n8n\n\nNas configurações do seu n8n, vá até o menu **`n8n API`** e clique no botão **`Create an API Key`**\n\n![Image](https://i.imgur.com/hjO4E9q.png)\n\nDê um nome para sua chave api, e selecione a opção **`No Expiration`**\n\n![Image](https://i.imgur.com/NMrJcsW.png)\n\n### :warning: Guarde sua chave api em um lugar seguro, ela não aparecerá novamente no menu do n8n! :warning:\n\nAbra qualquer node do n8n e adicione suas credenciais.\n\n![Image](https://i.imgur.com/XZeEt1H.png)\n\n1. Copie e cole sua chave api no campo '**`API Key`**'.\n2. Coloque seu domínio do n8n com **api/v1** no campo '**`Base Url`**'\n`https://n8n.seudominio.com/api/v1`",
+        "height": 2016,
+        "width": 928,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -848,
+        -1056
+      ],
+      "typeVersion": 1,
+      "id": "4dd1ee30-f914-4cb7-b3ae-99a3408ce99c",
+      "name": "Sticky Note3"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "loop_workflows": {
+      "main": [
+        [],
+        [
+          {
+            "node": "getFolder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "toJson": {
+      "main": [
+        [
+          {
+            "node": "create-update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "uploadFile": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "updateFile": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "start": {
+      "main": [
+        [
+          {
+            "node": "pega_filtra_workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "loop_workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getFile": {
+      "main": [
+        [
+          {
+            "node": "merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "folder_exists": {
+      "main": [
+        [
+          {
+            "node": "getFile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "createFolder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "createFolder": {
+      "main": [
+        [
+          {
+            "node": "merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "setInfo": {
+      "main": [
+        [
+          {
+            "node": "toJson",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "create-update": {
+      "main": [
+        [
+          {
+            "node": "uploadFile",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "updateFile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "merge": {
+      "main": [
+        [
+          {
+            "node": "setInfo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "getFolder": {
+      "main": [
+        [
+          {
+            "node": "folder_exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pega_filtra_workflows": {
+      "main": [
+        [
+          {
+            "node": "loop_workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "pega_workflow": {
+      "main": [
+        [
+          {
+            "node": "loop_workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "recebe_chamada": {
+      "main": [
+        [
+          {
+            "node": "pega_workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "escuta_atualizacao": {
+      "main": [
+        [
+          {
+            "node": "chama_backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "9ac14cff-b692-4e9f-8632-759c597811d6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99fad291a5fe401d501e4f538a199fb57b08c7e3ec314354326b3244a970e2a7"
+  },
+  "id": "x5P78ZgSICa2TbGZ",
+  "tags": [
+    {
+      "createdAt": "2025-09-24T15:32:03.297Z",
+      "updatedAt": "2025-09-24T15:32:03.297Z",
+      "id": "WFdwKXCmHBZd1loQ",
+      "name": "Vini"
+    }
+  ]
+}

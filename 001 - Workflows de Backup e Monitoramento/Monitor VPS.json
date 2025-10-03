@@ -1,0 +1,404 @@
+{
+  "name": "Monitor VPS",
+  "nodes": [
+    {
+      "parameters": {
+        "jsCode": "// guardar o input em uma variavel\nconst cpu = $input.first().json.cpu\nconst mem = $input.first().json.mem\nconst storage = $input.first().json.storage\n\nlet alertas = [];\n\nif (cpu >= 80) {\n  alertas.push(`🖥️ Uso da CPU excedeu o limite: ${cpu}%`);\n};\nif (mem >= 10) {\n  alertas.push(`📟 Uso da Memoria excedeu o limite: ${mem}%`);\n};\nif (storage >= 80) {\n  alertas.push(`💽 Armazenamento excedeu o limite: ${storage}%`);\n};\n\nlet frase = alertas.join(\".\\n\");\n\nif (frase.length > 0) {\n  frase = `🚨 Alerta 🚨 \\n\\n` + frase;\n}\n\nreturn {\n  frase\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        480
+      ],
+      "id": "ead6aa9a-0947-4b42-8ad2-f0ed0b6efcdd",
+      "name": "setAlert"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a56172b4-c918-43a9-9f8b-a5bde2e5d7a6",
+              "leftValue": "={{ $json.frase }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        -224,
+        704
+      ],
+      "id": "8a4a77fe-f889-4eae-94f4-40e3042af622",
+      "name": "hasAlert"
+    },
+    {
+      "parameters": {
+        "content": "# Monitoramento VPS\n",
+        "height": 944,
+        "width": 608,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -352,
+        -48
+      ],
+      "typeVersion": 1,
+      "id": "67d28ae4-d30a-4d13-a174-d241011a6e1f",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1da043b2-975e-4095-8d38-57a9b432d514",
+              "name": "cpu",
+              "value": "={{ $('verifica_cpu').item.json.stdout.replace('%', '') }}",
+              "type": "number"
+            },
+            {
+              "id": "338953e6-08dd-4a3b-9a1a-f6fee0119b99",
+              "name": "mem",
+              "value": "={{ $('verifica_memoria').first().json.stdout.replace('%', '') }}",
+              "type": "number"
+            },
+            {
+              "id": "3f17f216-0c8f-41bd-8e04-eb49d4d6ec8a",
+              "name": "storage",
+              "value": "={{ $json.stdout.replace('%', '') }}",
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -224,
+        480
+      ],
+      "id": "96ef8525-2250-4ddc-81a2-9bc82339399d",
+      "name": "editFields"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "id-do-seu-workflow-de-backup",
+          "mode": "id",
+          "cachedResultUrl": "/workflow/id-do-seu-workflow-de-backup"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        928
+      ],
+      "id": "cc3621a8-045e-40d2-b6d3-b85aee484e64",
+      "name": "chama_backup"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={https://evo.seudominio.com.br}/message/sendText/{sua-instancia-evo}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "sua-chave-api-evo"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "55{seu-numero-com-ddd}"
+            },
+            {
+              "name": "text",
+              "value": "={{ $json.frase }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -16,
+        704
+      ],
+      "id": "660e9eb4-32b3-47d3-b4d6-cd60dd877ce9",
+      "name": "send_text"
+    },
+    {
+      "parameters": {
+        "command": "=#!/bin/bash\nread -r _ cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq cpu_softirq cpu_steal cpu_guest cpu_guest_nice < <(grep 'cpu ' /proc/stat)\ntotal_cpu_initial=$((cpu_user+cpu_nice+cpu_system+cpu_idle+cpu_iowait+cpu_irq+cpu_softirq+cpu_steal+cpu_guest+cpu_guest_nice))\nidle_cpu_initial=$cpu_idle\n\nsleep 1\n\nread -r _ cpu_user cpu_nice cpu_system cpu_idle cpu_iowait cpu_irq cpu_softirq cpu_steal cpu_guest cpu_guest_nice < <(grep 'cpu ' /proc/stat)\ntotal_cpu_final=$((cpu_user+cpu_nice+cpu_system+cpu_idle+cpu_iowait+cpu_irq+cpu_softirq+cpu_steal+cpu_guest+cpu_guest_nice))\nidle_cpu_final=$cpu_idle\n\ntotal_diff=$((total_cpu_final-total_cpu_initial))\nidle_diff=$((idle_cpu_final-idle_cpu_initial))\ncpu_usage=$(awk \"BEGIN {print 100 * (1 - $idle_diff/$total_diff)}\")\nprintf \"%.2f%%\\n\" $cpu_usage"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        32
+      ],
+      "id": "60913fe5-ce4f-4712-ad82-cdc5ad7b6c22",
+      "name": "verifica_cpu"
+    },
+    {
+      "parameters": {
+        "command": "free | awk '/Mem:/ {printf \"%.2f%%\\n\", ($2-$7)/$2*100}'"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        272
+      ],
+      "id": "7b04d2e9-8652-428d-a7a6-915bec2d5769",
+      "name": "verifica_memoria"
+    },
+    {
+      "parameters": {
+        "command": "df -h | awk '/\\/$/ {print $5+4}'"
+      },
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -16,
+        272
+      ],
+      "id": "adbc2569-3a1a-4750-9816-abb458a0f35e",
+      "name": "verifica_espaco"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 30
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -240,
+        32
+      ],
+      "id": "03478cd7-0104-4b0a-aa56-a1c2a6d74368",
+      "name": "start"
+    },
+    {
+      "parameters": {
+        "content": "## send_text\nColoque suas credenciais da Evolution no node **`send_text`**\n\n1. Url da sua Evolution\n2. Instancia\n3. Chave API",
+        "height": 240,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        272,
+        656
+      ],
+      "typeVersion": 1,
+      "id": "eccb7b59-7196-471d-be8b-72b8165c71b2",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "events": [
+          "update"
+        ]
+      },
+      "type": "n8n-nodes-base.n8nTrigger",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        928
+      ],
+      "id": "3ecea6b0-3b78-42e3-a383-85dbd69ae25a",
+      "name": "escuta_atualizacao"
+    },
+    {
+      "parameters": {
+        "content": "## chama_backup\n\nLembre-se de mudar colocar o id do seu workflow de backup no node **`chama_backup`**",
+        "height": 176,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        272,
+        912
+      ],
+      "typeVersion": 1,
+      "id": "fe2eb13a-75d8-4e33-9c3f-1dbb74439d10",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "sendTo": "seuemail@exemplo.com",
+        "subject": "Alerta VPS",
+        "emailType": "text",
+        "message": "={{ $json.frase }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        304,
+        496
+      ],
+      "id": "3b246f12-547d-4a31-a3a8-2c226866f1d6",
+      "name": "send_email",
+      "webhookId": "5653fde4-160c-41e0-bc73-318aaa770209",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "lfs4DSfyZbrweQNg",
+          "name": "Gmail Vini"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "setAlert": {
+      "main": [
+        [
+          {
+            "node": "hasAlert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "hasAlert": {
+      "main": [
+        [
+          {
+            "node": "send_text",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "send_email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "editFields": {
+      "main": [
+        [
+          {
+            "node": "setAlert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verifica_cpu": {
+      "main": [
+        [
+          {
+            "node": "verifica_memoria",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verifica_memoria": {
+      "main": [
+        [
+          {
+            "node": "verifica_espaco",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "verifica_espaco": {
+      "main": [
+        [
+          {
+            "node": "editFields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "start": {
+      "main": [
+        [
+          {
+            "node": "verifica_cpu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "escuta_atualizacao": {
+      "main": [
+        [
+          {
+            "node": "chama_backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "dfe38cb0-9071-4184-a8f8-c1acac7b888f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "99fad291a5fe401d501e4f538a199fb57b08c7e3ec314354326b3244a970e2a7"
+  },
+  "id": "ZYR69qVyPSO55vuY",
+  "tags": []
+}
